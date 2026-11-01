@@ -49,16 +49,19 @@
       render();
     }
 
+    // Each choice or Clear bumps this, so a slower, older read can't overwrite a newer state.
+    let readId = 0;
     fileInput.addEventListener('change', () => {
       const file = fileInput.files && fileInput.files[0];
       if (!file) return;
+      const id = ++readId;
       const reader = new FileReader();
-      reader.onload = () => setFile(file.name, String(reader.result));
-      reader.onerror = () => { fileStatus.textContent = `Could not read ${file.name}.`; };
+      reader.onload = () => { if (id === readId) setFile(file.name, String(reader.result)); };
+      reader.onerror = () => { if (id === readId) fileStatus.textContent = `Could not read ${file.name}.`; };
       reader.readAsText(file);
       fileInput.value = '';
     });
-    clearBtn.addEventListener('click', () => setFile(null, null));
+    clearBtn.addEventListener('click', () => { readId++; setFile(null, null); });
     urlInput.addEventListener('input', render);
 
     function render() {

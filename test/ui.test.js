@@ -21,6 +21,9 @@ const INPUTS = {
   pod: '<VAST version="3.0"><Ad id="61150959.140171158085632" sequence="1"><InLine><Creatives><Creative id="c1"><Linear/></Creative></Creatives></InLine></Ad>'
     + '<Ad id="61150990.140171158085000"><InLine><Creatives><Creative id="c2"><Linear/></Creative></Creatives></InLine></Ad>'
     + '<Ad id="w"><Wrapper fallbackOnNoAd="true"><VASTAdTagURI>https://t.example/v</VASTAdTagURI></Wrapper></Ad></VAST>',
+  escaped: '<VAST version="3.0"><Ad id="a&quot;b"><InLine><Error>https://t.example/e?a=1&amp;b=2</Error></InLine></Ad></VAST>',
+  verification: `<VAST version="4.1"><Ad id="v"><InLine><AdVerifications><Verification vendor="x">
+    <VerificationParameters>${'a'.repeat(80)}Z</VerificationParameters></Verification></AdVerifications></InLine></Ad></VAST>`,
   repaired: 'HTTP/1.1 200 OK\n<xml><vmap:VMAP version="1.0"><vmap:AdBreak timeOffset="start" breakId="pre"><vmap:AdSource>'
     + '<vmap:AdTagURI templateType="vast3"><![CDATA[https://ads.example/tag]]></vmap:AdTagURI></vmap:AdSource></vmap:AdBreak></vmap:VMAP></xml>',
   long: `<VAST version="4.0"><Ad id="a" data="${LONG_ATTR}"><InLine><Creatives><Creative id="c"><NonLinearAds>
@@ -70,6 +73,28 @@ async function driver(INPUTS) {
     rows: $$('table.checks tbody tr').map((r) => [r.className, ...[...r.cells].map((c) => c.textContent)]),
   };
 
+  // CSV reads that finish out of order, or after Clear, must not win (bug #2).
+  const RealFileReader = window.FileReader;
+  const pending = [];
+  window.FileReader = class { readAsText(file) { pending.push({ file, reader: this }); } };
+  const choose = (name, text) => {
+    const t = new DataTransfer();
+    t.items.add(new File([text], name, { type: 'text/csv' }));
+    $('#csv-input').files = t.files;
+    $('#csv-input').dispatchEvent(new Event('change'));
+  };
+  const finish = async (i) => { const p = pending[i]; p.reader.result = await p.file.text(); p.reader.onload(); };
+  choose('A.csv', 'env,instream');
+  choose('B.csv', 'env,vp');
+  await finish(1);
+  await finish(0);
+  R.race = { afterOutOfOrder: $('.file-status').textContent };
+  choose('C.csv', 'env,x');
+  $('.file-row .link-button').click();
+  await finish(2);
+  R.race.afterClear = $('.file-status').textContent;
+  window.FileReader = RealFileReader;
+
   $('#tab-vast').click();
   R.vastTabShown = !$('#panel-vast').hidden && $('#panel-url').hidden;
 
@@ -105,8 +130,22 @@ async function driver(INPUTS) {
     rows: $$('table.creatives tbody tr').map((r) => [r.cells[1].textContent, r.cells[3].textContent, r.cells[4].textContent, r.cells[8].textContent]),
   };
 
+  await paste(INPUTS.escaped);
+  R.escaped = $('.xml-view').textContent;
+
+  await paste(INPUTS.verification);
+  const showAll = $('table.verification .toggle');
+  const paramText = () => $('table.verification tbody td:nth-child(5) code').textContent;
+  R.verification = { before: paramText() };
+  showAll.click();
+  R.verification.expanded = paramText();
+  R.verification.button = showAll.textContent;
+  showAll.click();
+  R.verification.collapsed = paramText();
+
   await paste(INPUTS.repaired);
   R.repaired = {
+    kind: $('table.creatives tbody tr').cells[9].textContent,
     notes: $$('.notice.note').map((n) => n.textContent),
     format: $('.tiles li b').textContent,
     position: $('table.creatives tbody tr').cells[1].textContent,
@@ -133,7 +172,7 @@ function runPage() {
     const dom = execFileSync(CHROME, [
       '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
       `--user-data-dir=${path.join(dir, 'profile')}`, '--allow-file-access-from-files',
-      '--window-size=900,800', '--virtual-time-budget=5000', '--dump-dom', 'file://' + page,
+      '--window-size=900,800', '--virtual-time-budget=20000', '--dump-dom', 'file://' + page,
     ], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'ignore'] });
     const m = /<pre id="report"[^>]*>([\s\S]*?)<\/pre>/.exec(dom);
     if (!m) throw new Error('page produced no report');
@@ -208,7 +247,26 @@ test('pod, fallback and fallbackOnNoAd are labelled', { skip }, () => {
   ]);
 });
 
+test('a slower, older CSV read never replaces a newer file or a Clear (bug #2)', { skip }, () => {
+  assert.equal(R.race.afterOutOfOrder, 'B.csv · 1 expected parameter');
+  assert.equal(R.race.afterClear, '');
+});
+
+test('formatted view shows XML escapes, not decoded characters (bug #7)', { skip }, () => {
+  assert.ok(R.escaped.includes('id="a&quot;b"'), R.escaped);
+  assert.ok(R.escaped.includes('https://t.example/e?a=1&amp;b=2'), R.escaped);
+});
+
+test('show all expands an 81-character verification parameter (bug #10)', { skip }, () => {
+  const full = 'a'.repeat(80) + 'Z';
+  assert.equal(R.verification.before, 'a'.repeat(80) + '…');
+  assert.equal(R.verification.expanded, full);
+  assert.equal(R.verification.button, 'Show less');
+  assert.equal(R.verification.collapsed, 'a'.repeat(80) + '…');
+});
+
 test('repaired input is reported and still broken down', { skip }, () => {
+  assert.equal(R.repaired.kind, 'Ad tag (not fetched)https://ads.example/tagCopy');
   assert.deepEqual(R.repaired.notes, [
     'Ignored text before the XML: "HTTP/1.1 200 OK"',
     'Added the missing namespace declaration for the "vmap:" prefix.',

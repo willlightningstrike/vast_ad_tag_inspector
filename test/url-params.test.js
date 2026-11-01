@@ -91,3 +91,13 @@ test('semicolon divides parameters like ampersand', () => {
     ['slot', '123456'],
   ]);
 });
+
+test('a question mark inside a bare query value stays in the value (bug #3)', () => {
+  const r = parseAdUrl('description_url=https://example.com/video?clip=1&env=vp');
+  assert.equal(r.base, null);
+  assert.deepEqual(r.params.map((p) => [p.name, p.value]), [['description_url', 'https://example.com/video?clip=1'], ['env', 'vp']]);
+  assert.deepEqual(parseAdUrl('q=a?b&env=vp').params.map((p) => [p.name, p.value]), [['q', 'a?b'], ['env', 'vp']]);
+  const full = parseAdUrl('https://h.example/p?u=x?y&a=1');
+  assert.equal(full.base, 'https://h.example/p');
+  assert.deepEqual(full.params.map((p) => [p.name, p.value]), [['u', 'x?y'], ['a', '1']]);
+});

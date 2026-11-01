@@ -68,3 +68,7 @@ test('same name twice kept', () => {
 test('unescapes doubled quotes inside a quoted value', () => {
   assert.equal(parseExpectations('cust_params,"a ""b"" c"')[0].expected, 'a "b" c');
 });
+
+test('a header after leading blank lines is still skipped (bug #9)', () => {
+  assert.deepEqual(parseExpectations('\n  \nparameter,value\nenv,vp'), [{ line: 4, name: 'env', expected: 'vp', unexpected: null }]);
+});

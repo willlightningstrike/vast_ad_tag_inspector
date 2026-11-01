@@ -14,7 +14,7 @@ const report = (file) => buildReport(parseFile(file).doc);
 test('positionFromOffset table', () => {
   const cases = {
     start: 'Preroll', '00:00:00': 'Preroll', '00:00:00.000': 'Preroll', '0%': 'Preroll',
-    '00:10:00.000': 'Midroll', '50%': 'Midroll', '#2': 'Midroll (#2)',
+    '00:10:00.000': 'Midroll', '50%': 'Midroll', '#2': 'Opportunity #2', '#1': 'Opportunity #1',
     end: 'Postroll', '100%': 'Postroll', soon: 'Unknown (soon)',
   };
   for (const [offset, expected] of Object.entries(cases)) {
@@ -152,4 +152,12 @@ test('pod and fallback ads are counted across VMAP breaks', () => {
   assert.deepEqual(r.creativeRows.map((x) => [x.position, x.role]), [
     ['Preroll', 'Pod #1'], ['Preroll', 'Pod #2'], ['Preroll', 'Fallback'], ['Postroll', 'Standalone'],
   ]);
+});
+
+test('VMAP placeholder rows have no fallbackOnNoAd or role (bug #11)', () => {
+  const xml = '<vmap:VMAP xmlns:vmap="http://www.iab.net/vmap-1.0" version="1.0"><vmap:AdBreak timeOffset="start"><vmap:AdSource>'
+    + '<vmap:AdTagURI>https://a.example/t</vmap:AdTagURI></vmap:AdSource></vmap:AdBreak></vmap:VMAP>';
+  const row = buildReport(parseXml(xml, DOMParser).doc, DOMParser).creativeRows[0];
+  assert.equal(row.fallbackOnNoAd, null);
+  assert.equal(row.role, null);
 });

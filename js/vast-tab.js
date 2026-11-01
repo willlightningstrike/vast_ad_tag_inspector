@@ -125,12 +125,13 @@
     if (!text) return '—';
     if (text.length <= 80) return el('code', {}, text);
     const short = el('code', {}, text.slice(0, 80) + '…');
+    let expanded = false;
     const toggle = el('button', {
       type: 'button', className: 'toggle',
       onclick: () => {
-        const full = short.textContent.length < text.length;
-        short.textContent = full ? text : text.slice(0, 80) + '…';
-        toggle.textContent = full ? 'Show less' : 'Show all';
+        expanded = !expanded;
+        short.textContent = expanded ? text : text.slice(0, 80) + '…';
+        toggle.textContent = expanded ? 'Show less' : 'Show all';
       },
     }, 'Show all');
     return [short, ' ', toggle];

@@ -59,7 +59,7 @@
       height: attr(sizeFrom || el, 'height'),
       bitrate: bitrate(el),
       codec: attr(el, 'codec'),
-      apiFramework: attr(el, 'apiFramework'),
+      apiFramework: attr(el, 'apiFramework') || attr(sizeFrom, 'apiFramework'),
       url, full,
     };
   }

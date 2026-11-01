@@ -9,7 +9,8 @@
     const o = String(offset || '').trim();
     if (o === 'start') return 'Preroll';
     if (o === 'end') return 'Postroll';
-    if (/^#\d+$/.test(o)) return `Midroll (${o})`;
+    // "#n" is the nth ad opportunity, which may come before the content, so it is not a time.
+    if (/^#\d+$/.test(o)) return `Opportunity ${o}`;
     const pct = /^(\d+(?:\.\d+)?)%$/.exec(o);
     if (pct) {
       const n = Number(pct[1]);
@@ -21,8 +22,8 @@
 
   function placeholder(ctx, kind, url) {
     return {
-      ...ctx, adId: null, adType: null, sequence: null, creativeId: null, adIdAttr: null,
-      universalAdId: null, kind, duration: null, url, placeholder: true,
+      ...ctx, adId: null, adType: null, sequence: null, role: null, creativeId: null, adIdAttr: null,
+      universalAdId: null, kind, duration: null, url, fallbackOnNoAd: null, placeholder: true,
     };
   }
 

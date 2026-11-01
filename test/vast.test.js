@@ -171,3 +171,13 @@ test('wrapper fallbackOnNoAd is reported when set', () => {
   assert.equal(fromString(wrapper(' fallbackOnNoAd="false"')).creativeRows[0].fallbackOnNoAd, 'false');
   assert.equal(fromString(wrapper('')).creativeRows[0].fallbackOnNoAd, null);
 });
+
+test('companion and non-linear apiFramework is read from the holder element (bug #8)', () => {
+  const r = fromString(`<VAST version="4.1"><Ad><InLine><Creatives>
+    <Creative><CompanionAds><Companion width="300" height="250" apiFramework="VPAID">
+      <StaticResource creativeType="application/javascript">https://t.example/ad.js</StaticResource></Companion></CompanionAds></Creative>
+    <Creative><NonLinearAds><NonLinear width="1" height="1" apiFramework="SIMID">
+      <IFrameResource>https://t.example/nl.html</IFrameResource></NonLinear></NonLinearAds></Creative>
+  </Creatives></InLine></Ad></VAST>`);
+  assert.deepEqual(r.mediaFiles.map((m) => [m.kind, m.apiFramework]), [['Companion', 'VPAID'], ['NonLinear', 'SIMID']]);
+});

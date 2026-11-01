@@ -117,3 +117,34 @@ test('a real error is still reported when declaring prefixes does not help', () 
   const r = parse('<vmap:VMAP version="1.0"><vmap:AdBreak></vmap:VMAP>');
   assert.ok(r.error);
 });
+
+test('formatting keeps whitespace between text and CDATA pieces (bug #1)', () => {
+  const doc = parse('<V><A><![CDATA[first ]]><![CDATA[second]]></A><B>one <![CDATA[two]]> three</B><C>\n  <![CDATA[ x ]]>\n</C></V>').doc;
+  const again = parse(formatXml(doc)).doc.documentElement;
+  assert.equal(text(childElements(again, 'A')[0]), 'first second');
+  assert.equal(text(childElements(again, 'B')[0]), 'one two three');
+  assert.ok(formatXml(doc).includes('<C><![CDATA[x]]></C>'));
+});
+
+test('formatted text never contains a bare ]]> (bug #4)', () => {
+  const out = formatXml(parse('<VAST version="4.1"><Error>https://t.example/?x=]]&gt;</Error></VAST>').doc);
+  assert.ok(out.includes('<Error>https://t.example/?x=]]&gt;</Error>'), out);
+});
+
+test('a pasted element named parsererror is not a parse error (bug #5)', () => {
+  const ok = parse('<VAST><Ad><InLine><Extensions><Extension type="debug"><parsererror>diagnostic</parsererror></Extension></Extensions></InLine></Ad></VAST>');
+  assert.equal(ok.error, undefined);
+  // A browser-like parser that marks real failures with an XHTML-namespaced <parsererror>.
+  class BrowserLikeParser {
+    parseFromString(s, type) {
+      try {
+        return new DOMParser({ onError: (level, msg) => { if (level !== 'warning') throw new Error(msg); } }).parseFromString(s, type);
+      } catch (e) {
+        return new DOMParser().parseFromString('<html><parsererror xmlns="http://www.w3.org/1999/xhtml">broken</parsererror></html>', type);
+      }
+    }
+  }
+  const custom = parseXml('<VAST><Extension><parsererror>diagnostic</parsererror></Extension></VAST>', BrowserLikeParser);
+  assert.equal(custom.error, undefined);
+  assert.equal(parseXml('<VAST><Ad></VAST>', BrowserLikeParser).error.message, 'broken');
+});

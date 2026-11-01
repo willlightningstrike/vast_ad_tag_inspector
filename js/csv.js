@@ -35,10 +35,13 @@
   function parseExpectations(text) {
     const lines = String(text || '').replace(/^\uFEFF/, '').split(/\r\n|\r|\n/);
     const out = [];
+    let first = true;
     lines.forEach((lineText, i) => {
       if (!lineText.trim()) return;
       const f = fields(lineText);
-      if (i === 0 && isHeader(f)) return;
+      const isFirst = first;
+      first = false;
+      if (isFirst && isHeader(f)) return;
       const [name, expected = '', unexpected = ''] = f;
       if (!name) return;
       out.push({ line: i + 1, name, expected: expected === '' ? null : expected, unexpected: unexpected === '' ? null : unexpected });

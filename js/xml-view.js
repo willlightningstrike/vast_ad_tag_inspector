@@ -1,14 +1,14 @@
 // Renders a parsed XML document as an indented, colour-coded, foldable tree.
 // Every piece of content is inserted as text, so pasted markup can never run.
 (function (root) {
-  const { el } = root.AdInspector;
+  const { el, textPieces, escText, escAttr } = root.AdInspector;
   const ELEMENT = 1, TEXT = 3, CDATA = 4, COMMENT = 8;
 
   function openTag(node, selfClose) {
     const parts = ['<', el('span', { className: 'x-tag' }, node.nodeName)];
     for (let i = 0; i < node.attributes.length; i++) {
       const a = node.attributes[i];
-      parts.push(' ', el('span', { className: 'x-attr' }, a.name), '=', el('span', { className: 'x-val' }, `"${a.value}"`));
+      parts.push(' ', el('span', { className: 'x-attr' }, a.name), '=', el('span', { className: 'x-val' }, `"${escAttr(a.value)}"`));
     }
     parts.push(selfClose ? '/>' : '>');
     return parts;
@@ -16,10 +16,13 @@
 
   const closeTag = (node) => ['</', el('span', { className: 'x-tag' }, node.nodeName), '>'];
 
+  // Text is shown escaped, as it is written in XML; CDATA is shown as-is inside its markers.
   function textPart(node) {
     const t = (node.nodeValue || '').trim();
-    return node.nodeType === CDATA ? el('span', { className: 'x-cdata' }, `<![CDATA[${t}]]>`) : t;
+    return node.nodeType === CDATA ? el('span', { className: 'x-cdata' }, `<![CDATA[${t}]]>`) : escText(t);
   }
+
+  const piecePart = (p) => (p.cdata ? el('span', { className: 'x-cdata' }, `<![CDATA[${p.text}]]>`) : escText(p.text));
 
   function significantChildren(node) {
     const kids = [];
@@ -36,7 +39,7 @@
     const kids = significantChildren(node);
     if (kids.length === 0) return el('div', { className: 'leaf' }, openTag(node, true));
     if (kids.every((k) => k.nodeType === TEXT || k.nodeType === CDATA)) {
-      return el('div', { className: 'leaf' }, openTag(node, false), kids.map(textPart), closeTag(node));
+      return el('div', { className: 'leaf' }, openTag(node, false), textPieces(node).map(piecePart), closeTag(node));
     }
     return el('details', { open: true },
       el('summary', {}, openTag(node, false), el('span', { className: 'ellipsis' }, ' … ', closeTag(node))),

@@ -17,6 +17,26 @@
     return { message: reason || message.trim(), line: m ? Number(m[1]) : null, column: m ? Number(m[2]) : null };
   }
 
+  // Browsers report a failed parse by inserting a <parsererror> element in their own namespace.
+  // Learn that marker once per parser from a deliberately broken document, so a pasted element
+  // that merely happens to be called parsererror is not mistaken for one.
+  const errorMarkers = new WeakMap();
+  function parserErrorMarker(DOMParserCtor) {
+    if (!errorMarkers.has(DOMParserCtor)) {
+      let marker = null;
+      try {
+        const onError = (level, message) => { if (level !== 'warning') throw new Error(message); };
+        const bad = new DOMParserCtor({ onError }).parseFromString('<', 'application/xml');
+        const el = bad && bad.getElementsByTagName('parsererror')[0];
+        if (el) marker = { ns: el.namespaceURI };
+      } catch (e) {
+        // This parser throws on errors instead of marking them (xmldom does).
+      }
+      errorMarkers.set(DOMParserCtor, marker);
+    }
+    return errorMarkers.get(DOMParserCtor);
+  }
+
   function tryParse(s, DOMParserCtor) {
     let doc;
     let failure = null;
@@ -32,7 +52,14 @@
     } catch (e) {
       return { error: failure || errorParts(String(e.message || e)) };
     }
-    const perr = doc && doc.getElementsByTagName('parsererror')[0];
+    const marker = parserErrorMarker(DOMParserCtor);
+    let perr = null;
+    if (marker && doc) {
+      const found = doc.getElementsByTagName('parsererror');
+      for (let i = 0; i < found.length && !perr; i++) {
+        if (found[i].namespaceURI === marker.ns) perr = found[i];
+      }
+    }
     if (perr) {
       let msg = '';
       for (let n = perr.firstChild; n; n = n.nextSibling) {
@@ -136,7 +163,7 @@
     return el.getAttribute(name);
   }
 
-  const escText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const escText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const escAttr = (s) => escText(s).replace(/"/g, '&quot;');
 
   function openTag(el) {
@@ -155,6 +182,29 @@
     return node.nodeType === CDATA ? '<![CDATA[' + t + ']]>' : escText(t);
   }
 
+  // The text and CDATA pieces of a text-only element, with the value's outer edges trimmed
+  // across pieces; whitespace between two pieces is part of the value and is kept.
+  // Returns [] for whitespace-only text.
+  function textPieces(el) {
+    const pieces = [];
+    for (let n = el.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === TEXT || n.nodeType === CDATA) pieces.push({ cdata: n.nodeType === CDATA, text: n.nodeValue || '' });
+    }
+    while (pieces.length && !pieces[0].text.trim()) pieces.shift();
+    while (pieces.length && !pieces[pieces.length - 1].text.trim()) pieces.pop();
+    if (!pieces.length) return [];
+    pieces[0].text = pieces[0].text.replace(/^\s+/, '');
+    pieces[pieces.length - 1].text = pieces[pieces.length - 1].text.replace(/\s+$/, '');
+    return pieces;
+  }
+
+  function hasChildMarkup(el) {
+    for (let n = el.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === ELEMENT || n.nodeType === COMMENT) return true;
+    }
+    return false;
+  }
+
   function formatNode(el, depth, lines) {
     const pad = '  '.repeat(depth);
     const kids = [];
@@ -162,10 +212,12 @@
       if (n.nodeType === ELEMENT || n.nodeType === COMMENT) kids.push(n);
       else if ((n.nodeType === TEXT || n.nodeType === CDATA) && inline(n)) kids.push(n);
     }
+    const pieces = hasChildMarkup(el) ? null : textPieces(el);
     if (kids.length === 0) {
       lines.push(pad + openTag(el) + '/>');
-    } else if (kids.every((n) => n.nodeType === TEXT || n.nodeType === CDATA)) {
-      lines.push(pad + openTag(el) + '>' + kids.map(inline).join('') + '</' + el.nodeName + '>');
+    } else if (pieces) {
+      const body = pieces.map((p) => (p.cdata ? '<![CDATA[' + p.text + ']]>' : escText(p.text))).join('');
+      lines.push(pad + openTag(el) + '>' + body + '</' + el.nodeName + '>');
     } else {
       lines.push(pad + openTag(el) + '>');
       for (const n of kids) {
@@ -183,7 +235,7 @@
     return lines.join('\n');
   }
 
-  const api = { parseXml, childElements, firstChild, descendants, text, attr, formatXml };
+  const api = { parseXml, childElements, firstChild, descendants, text, attr, formatXml, textPieces, escText, escAttr };
   root.AdInspector = Object.assign(root.AdInspector || {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -115,7 +115,7 @@ Paste a VAST or VMAP response. The page updates as you type or paste and shows:
    - ads, plus pod ads and fallback ads when there are any
    - creatives, trackers, media files and verifications
 4. **Creatives:** one row per creative.
-   - **Position:** Preroll, Midroll or Postroll, from the VMAP `timeOffset`. Plain VAST shows "not stated".
+   - **Position:** Preroll, Midroll or Postroll, from the VMAP `timeOffset`. An offset such as `#2` shows as `Opportunity #2`: it means the second ad opportunity, which can come before the content, so it isn't labelled Midroll. Plain VAST shows "not stated".
    - **Ad and creative IDs:** ad id, creative id, creative `AdID` and Universal Ad ID.
    - **Ad role:**
      - `Pod #n`: an ad with `sequence="n"`

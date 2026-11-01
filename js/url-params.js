@@ -18,12 +18,15 @@
     if (hash !== -1) s = s.slice(0, hash);
 
     const q = s.indexOf('?');
+    const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
+    // In a bare query string ("a=1&b=x?y"), a "?" belongs to a value, not the URL.
+    const bareQuery = q !== -1 && !hasScheme && s.slice(0, q).includes('=');
     let base = null;
     let query = s;
-    if (q !== -1) {
+    if (q !== -1 && !bareQuery) {
       base = s.slice(0, q) || null;
       query = s.slice(q + 1);
-    } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) {
+    } else if (hasScheme && q === -1) {
       base = s;
       query = '';
     }
