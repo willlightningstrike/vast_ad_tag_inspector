@@ -163,8 +163,10 @@
     return el.getAttribute(name);
   }
 
-  const escText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const escAttr = (s) => escText(s).replace(/"/g, '&quot;');
+  // A parser turns a literal CR into LF, and newline or tab in an attribute into a space,
+  // so those characters are written as character references to survive a re-parse.
+  const escText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r/g, '&#13;');
+  const escAttr = (s) => escText(s).replace(/"/g, '&quot;').replace(/\n/g, '&#10;').replace(/\t/g, '&#9;');
 
   function openTag(el) {
     let s = '<' + el.nodeName;
@@ -182,27 +184,31 @@
     return node.nodeType === CDATA ? '<![CDATA[' + t + ']]>' : escText(t);
   }
 
-  // The text and CDATA pieces of a text-only element, with the value's outer edges trimmed
-  // across pieces; whitespace between two pieces is part of the value and is kept.
-  // Returns [] for whitespace-only text.
+  // The text, CDATA and comment pieces of an element with no child elements, in order, with the
+  // value's outer edges trimmed across pieces; whitespace between pieces is part of the value and
+  // is kept. Returns [] when there is no text at all (whitespace and comments only).
   function textPieces(el) {
     const pieces = [];
     for (let n = el.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === TEXT || n.nodeType === CDATA) pieces.push({ cdata: n.nodeType === CDATA, text: n.nodeValue || '' });
+      if (n.nodeType === ELEMENT) return [];
+      const kind = n.nodeType === CDATA ? 'cdata' : n.nodeType === TEXT ? 'text' : n.nodeType === COMMENT ? 'comment' : null;
+      if (kind) pieces.push({ kind, text: n.nodeValue || '' });
     }
-    while (pieces.length && !pieces[0].text.trim()) pieces.shift();
-    while (pieces.length && !pieces[pieces.length - 1].text.trim()) pieces.pop();
-    if (!pieces.length) return [];
-    pieces[0].text = pieces[0].text.replace(/^\s+/, '');
-    pieces[pieces.length - 1].text = pieces[pieces.length - 1].text.replace(/\s+$/, '');
-    return pieces;
-  }
-
-  function hasChildMarkup(el) {
-    for (let n = el.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === ELEMENT || n.nodeType === COMMENT) return true;
-    }
-    return false;
+    const isText = (p) => p.kind !== 'comment';
+    if (!pieces.some((p) => isText(p) && p.text.trim())) return [];
+    const trimEdge = (order, strip) => {
+      for (const i of order) {
+        const p = pieces[i];
+        if (!isText(p)) continue;
+        if (!p.text.trim()) { p.drop = true; continue; }
+        p.text = strip(p.text);
+        return;
+      }
+    };
+    const idx = pieces.map((_, i) => i);
+    trimEdge(idx, (t) => t.replace(/^\s+/, ''));
+    trimEdge(idx.reverse(), (t) => t.replace(/\s+$/, ''));
+    return pieces.filter((p) => !p.drop);
   }
 
   function formatNode(el, depth, lines) {
@@ -212,11 +218,12 @@
       if (n.nodeType === ELEMENT || n.nodeType === COMMENT) kids.push(n);
       else if ((n.nodeType === TEXT || n.nodeType === CDATA) && inline(n)) kids.push(n);
     }
-    const pieces = hasChildMarkup(el) ? null : textPieces(el);
+    const pieces = textPieces(el);
     if (kids.length === 0) {
       lines.push(pad + openTag(el) + '/>');
-    } else if (pieces) {
-      const body = pieces.map((p) => (p.cdata ? '<![CDATA[' + p.text + ']]>' : escText(p.text))).join('');
+    } else if (pieces.length) {
+      const body = pieces.map((p) => (p.kind === 'cdata' ? '<![CDATA[' + p.text + ']]>'
+        : p.kind === 'comment' ? '<!--' + p.text + '-->' : escText(p.text))).join('');
       lines.push(pad + openTag(el) + '>' + body + '</' + el.nodeName + '>');
     } else {
       lines.push(pad + openTag(el) + '>');

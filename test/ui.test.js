@@ -75,23 +75,27 @@ async function driver(INPUTS) {
 
   // CSV reads that finish out of order, or after Clear, must not win (bug #2).
   const RealFileReader = window.FileReader;
+  // The stub finishes reads synchronously with known text: a real Blob read is not reliably
+  // waited for by headless Chrome's virtual clock.
   const pending = [];
+  const contents = {};
   window.FileReader = class { readAsText(file) { pending.push({ file, reader: this }); } };
   const choose = (name, text) => {
+    contents[name] = text;
     const t = new DataTransfer();
     t.items.add(new File([text], name, { type: 'text/csv' }));
     $('#csv-input').files = t.files;
     $('#csv-input').dispatchEvent(new Event('change'));
   };
-  const finish = async (i) => { const p = pending[i]; p.reader.result = await p.file.text(); p.reader.onload(); };
+  const finish = (i) => { const p = pending[i]; p.reader.result = contents[p.file.name]; p.reader.onload(); };
   choose('A.csv', 'env,instream');
   choose('B.csv', 'env,vp');
-  await finish(1);
-  await finish(0);
+  finish(1);
+  finish(0);
   R.race = { afterOutOfOrder: $('.file-status').textContent };
   choose('C.csv', 'env,x');
   $('.file-row .link-button').click();
-  await finish(2);
+  finish(2);
   R.race.afterClear = $('.file-status').textContent;
   window.FileReader = RealFileReader;
 

@@ -101,3 +101,14 @@ test('a question mark inside a bare query value stays in the value (bug #3)', ()
   assert.equal(full.base, 'https://h.example/p');
   assert.deepEqual(full.params.map((p) => [p.name, p.value]), [['u', 'x?y'], ['a', '1']]);
 });
+
+test('protocol-relative and schemeless urls keep their endpoint when the path has = (review 2, #2)', () => {
+  for (const [input, base] of [
+    ['//ads.example.com/zone=123?env=vp', '//ads.example.com/zone=123'],
+    ['ads.example.com/zone=123?env=vp', 'ads.example.com/zone=123'],
+  ]) {
+    const r = parseAdUrl(input);
+    assert.equal(r.base, base);
+    assert.deepEqual(r.params.map((p) => [p.name, p.value]), [['env', 'vp']]);
+  }
+});

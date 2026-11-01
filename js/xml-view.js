@@ -22,7 +22,11 @@
     return node.nodeType === CDATA ? el('span', { className: 'x-cdata' }, `<![CDATA[${t}]]>`) : escText(t);
   }
 
-  const piecePart = (p) => (p.cdata ? el('span', { className: 'x-cdata' }, `<![CDATA[${p.text}]]>`) : escText(p.text));
+  function piecePart(p) {
+    if (p.kind === 'cdata') return el('span', { className: 'x-cdata' }, `<![CDATA[${p.text}]]>`);
+    if (p.kind === 'comment') return el('span', { className: 'x-comment' }, `<!--${p.text}-->`);
+    return escText(p.text);
+  }
 
   function significantChildren(node) {
     const kids = [];
@@ -38,8 +42,9 @@
     if (node.nodeType !== ELEMENT) return el('div', { className: 'leaf' }, textPart(node));
     const kids = significantChildren(node);
     if (kids.length === 0) return el('div', { className: 'leaf' }, openTag(node, true));
-    if (kids.every((k) => k.nodeType === TEXT || k.nodeType === CDATA)) {
-      return el('div', { className: 'leaf' }, openTag(node, false), textPieces(node).map(piecePart), closeTag(node));
+    const pieces = textPieces(node);
+    if (pieces.length) {
+      return el('div', { className: 'leaf' }, openTag(node, false), pieces.map(piecePart), closeTag(node));
     }
     return el('details', { open: true },
       el('summary', {}, openTag(node, false), el('span', { className: 'ellipsis' }, ' … ', closeTag(node))),

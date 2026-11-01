@@ -19,8 +19,11 @@
 
     const q = s.indexOf('?');
     const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
-    // In a bare query string ("a=1&b=x?y"), a "?" belongs to a value, not the URL.
-    const bareQuery = q !== -1 && !hasScheme && s.slice(0, q).includes('=');
+    // In a bare query string ("a=1&b=x?y"), a "?" belongs to a value, not the URL. It is a bare
+    // query when an "=" comes before the "?" with no "/" before it: parameter names never contain
+    // "/", while a host or path does ("//ads.example.com/zone=1?a=1").
+    const eq = s.indexOf('=');
+    const bareQuery = q !== -1 && !hasScheme && eq !== -1 && eq < q && !s.slice(0, eq).includes('/');
     let base = null;
     let query = s;
     if (q !== -1 && !bareQuery) {

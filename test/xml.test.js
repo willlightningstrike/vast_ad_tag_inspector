@@ -148,3 +148,21 @@ test('a pasted element named parsererror is not a parse error (bug #5)', () => {
   assert.equal(custom.error, undefined);
   assert.equal(parseXml('<VAST><Ad></VAST>', BrowserLikeParser).error.message, 'broken');
 });
+
+test('a comment inside a text value stays inline when formatting (review 2, #1)', () => {
+  const doc = parse('<V><P>key<!--debug-->=value</P><Q> a <!--x--> b </Q></V>').doc;
+  const out = formatXml(doc);
+  assert.ok(out.includes('<P>key<!--debug-->=value</P>'), out);
+  const again = parse(out).doc.documentElement;
+  assert.equal(text(childElements(again, 'P')[0]), 'key=value');
+  assert.equal(text(childElements(again, 'Q')[0]), 'a  b');
+});
+
+test('newline, tab and carriage return in attributes survive formatting (review 2, #3)', () => {
+  const doc = parse('<VAST><Ad id="a&#10;b&#9;c&#13;d"/></VAST>').doc;
+  const out = formatXml(doc);
+  assert.ok(out.includes('<Ad id="a&#10;b&#9;c&#13;d"/>'), out);
+  assert.equal(childElements(parse(out).doc.documentElement, 'Ad')[0].getAttribute('id'), 'a\nb\tc\rd');
+  const cr = parse('<VAST><Error>a&#13;b</Error></VAST>').doc;
+  assert.equal(childElements(parse(formatXml(cr)).doc.documentElement, 'Error')[0].textContent, 'a\rb');
+});
