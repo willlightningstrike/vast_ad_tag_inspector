@@ -108,13 +108,13 @@
     const rows = report.mediaFiles.map((m) => el('tr', {},
       el('td', { className: 'mono' }, dash(m.adId)),
       el('td', { className: 'mono' }, dash(m.creativeId)),
-      el('td', {}, m.kind),
+      el('td', { className: 'words' }, m.kind),
       el('td', { className: 'mono' }, m.resourceType === 'MediaFile' || m.resourceType === 'Mezzanine'
         ? dash(m.type)
         : [m.resourceType, m.type ? ` ${m.type}` : '']),
-      el('td', {}, dash(m.delivery)),
-      el('td', { className: 'mono' }, m.width && m.height ? `${m.width}×${m.height}` : '—'),
-      el('td', { className: 'mono' }, dash(m.bitrate)),
+      el('td', { className: 'words' }, dash(m.delivery)),
+      el('td', { className: 'mono nowrap' }, m.width && m.height ? `${m.width}×${m.height}` : '—'),
+      el('td', { className: 'mono nowrap' }, dash(m.bitrate)),
       el('td', { className: 'mono' }, dash(m.codec)),
       el('td', { className: 'mono' }, dash(m.apiFramework)),
       el('td', { className: 'urls' }, urlCell(m.url, m.full))));

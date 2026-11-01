@@ -166,6 +166,7 @@ table.data td {
 table.data tbody tr:last-child td { border-bottom: 0; }
 table.data td.result { overflow-wrap: normal; min-width: 7.5em; }
 table.data td.words { overflow-wrap: normal; }
+table.data td.nowrap { white-space: nowrap; }
 .muted { color: var(--muted); }
 
 /* The status stripe: problems are findable by scanning the left edge. */
@@ -221,7 +222,7 @@ tr.placeholder td code { font-style: normal; }
 .toggle { font: inherit; font-size: 13px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; }
 .url-list { margin: 6px 0 0; padding: 0; list-style: none; }
 .url-list li { padding: 4px 0; border-top: 1px dashed var(--rule); }
-.url-list .where { display: block; color: var(--muted); font-family: var(--sans); font-size: 12px; }
+td.urls .where { display: block; font-weight: normal; color: var(--muted); font-family: var(--sans); font-size: 12px; }
 .placeholder-url { display: block; margin-top: 4px; }
 .fallback-flag { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
 

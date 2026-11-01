@@ -109,6 +109,7 @@ async function driver(INPUTS) {
     creativeIds: $$('table.creatives tbody tr').map((r) => r.cells[5].textContent),
     roles: $$('table.creatives tbody tr').map((r) => r.cells[4].textContent),
     headers: $$('table.creatives thead th').map((th) => th.textContent),
+    singleUrlLabels: $$('table.trackers td.urls > .where').map((w) => getComputedStyle(w).display),
   };
   $('.section-actions .copy').click();
   await wait(50);
@@ -116,6 +117,8 @@ async function driver(INPUTS) {
 
   await paste(INPUTS.vast4);
   R.vast4 = { scriptsInResults: $$('.results script').length, htmlShownAsText: $('.xml-view').textContent.includes('<script>alert(1)</script>') };
+  const lines = (td) => { const r = document.createRange(); r.selectNodeContents(td); return [td.textContent, r.getClientRects().length]; };
+  R.vast4.mediaWordLines = $$('table.media tbody tr').flatMap((tr) => [2, 4, 5, 6].map((i) => lines(tr.cells[i])));
 
   await paste(INPUTS.long);
   const summary = $('.xml-view details details summary');
@@ -224,10 +227,20 @@ test('vast tab shows the google sample summary', { skip }, () => {
   assert.ok(R.google.copiedFormatted.includes('\n  <Ad id="5925573263">'));
 });
 
+test('a single tracker URL shows its ad label on its own line', { skip }, () => {
+  assert.ok(R.google.singleUrlLabels.length > 0);
+  assert.ok(R.google.singleUrlLabels.every((d) => d === 'block'), R.google.singleUrlLabels.join());
+});
+
 test('pasted script is shown as text and never runs', { skip }, () => {
   assert.equal(R.alerted, undefined);
   assert.equal(R.vast4.scriptsInResults, 0);
   assert.equal(R.vast4.htmlShownAsText, true);
+});
+
+test('media kind, delivery, size and bitrate are never split mid-word', { skip }, () => {
+  assert.ok(R.vast4.mediaWordLines.length > 0);
+  assert.deepEqual(R.vast4.mediaWordLines.filter(([, n]) => n !== 1), []);
 });
 
 test('long attributes wrap inside the formatted view', { skip }, () => {

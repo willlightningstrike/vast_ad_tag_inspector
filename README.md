@@ -9,6 +9,8 @@ It is plain HTML, CSS and JavaScript. **There is nothing to install and no serve
 
 **Nothing you paste leaves your computer.** The tool makes no network requests: it doesn't call the ad tag, doesn't follow Wrapper or VMAP ad tag URLs, and loads nothing from the internet.
 
+![An ad tag URL checked against a CSV: two problem rows in red, matching rows with a tick, and parameters not in the CSV marked not checked](docs/screenshots/url-tab.png)
+
 ## Prerequisites
 
 To **use** the tool:
@@ -88,7 +90,7 @@ Rules:
 
 #### Results
 
-Problem rows are listed first and highlighted in red:
+Problem rows are listed first and highlighted in red. The screenshot at the top of this page shows a CSV like the example above, checked against a Google sample ad tag.
 
 | Result | Meaning |
 |---|---|
@@ -102,7 +104,13 @@ Problem rows are listed first and highlighted in red:
 
 ### VAST / VMAP tab
 
-Paste a VAST or VMAP response. The page updates as you type or paste and shows:
+Paste a VAST or VMAP response. The page updates as you type or paste.
+
+![A pasted VAST 4.1 response and its formatted, colour-coded view with fold arrows](docs/screenshots/vast-formatted.png)
+
+![The summary tiles, then the Creatives, Trackers, Media files and Ad verification tables for an ad pod of two ads and a fallback Wrapper](docs/screenshots/vast-breakdown.png)
+
+It shows:
 
 1. **Formatted response:** indented and colour-coded, like a browser shows XML. Click ▾ to fold an element. **Copy formatted** copies the indented XML.
 2. **Notes**, if the input needed a repair to be read:
@@ -206,7 +214,7 @@ js/
   vast-tab.js           the "VAST / VMAP" tab
   app.js                tab switching
 test/                   unit tests, browser tests (ui.test.js) and XML fixtures
-docs/                   a Google sample response, and the update guide
+docs/                   a Google sample response, the update guide and README screenshots
 LICENSE                 MIT license
 ```
 
