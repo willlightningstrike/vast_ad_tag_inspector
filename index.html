@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VAST Ad Tag &amp; Response Inspector</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>VAST Ad Tag &amp; Response Inspector</h1>
+    <nav class="tabs" role="tablist" aria-label="Tools">
+      <button type="button" role="tab" id="tab-url" aria-controls="panel-url" data-tab="url">VAST ad tag URL</button>
+      <button type="button" role="tab" id="tab-vast" aria-controls="panel-vast" data-tab="vast">VAST / VMAP</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="panel-url" class="panel" role="tabpanel" aria-labelledby="tab-url"></section>
+    <section id="panel-vast" class="panel" role="tabpanel" aria-labelledby="tab-vast" hidden></section>
+  </main>
+
+  <script src="js/xml.js"></script>
+  <script src="js/url-params.js"></script>
+  <script src="js/csv.js"></script>
+  <script src="js/url-check.js"></script>
+  <script src="js/vast.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/dom.js"></script>
+  <script src="js/url-tab.js"></script>
+  <script src="js/xml-view.js"></script>
+  <script src="js/vast-tab.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

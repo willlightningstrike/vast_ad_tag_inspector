@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<v:VMAP xmlns:v="http://www.iab.net/videosuite/vmap" version="1.0">
+  <v:AdBreak timeOffset="start" breakType="linear" breakId="pre">
+    <v:AdSource id="pre-ad" allowMultipleAds="false" followRedirects="true">
+      <v:VASTAdData>
+        <VAST version="3.0">
+          <Ad id="p1">
+            <InLine>
+              <AdSystem>Example</AdSystem>
+              <AdTitle>Preroll</AdTitle>
+              <Impression><![CDATA[https://t.example/p1-imp]]></Impression>
+              <Creatives>
+                <Creative id="cp1">
+                  <Linear>
+                    <Duration>00:00:15</Duration>
+                    <MediaFiles>
+                      <MediaFile delivery="progressive" type="video/mp4" width="640" height="360"><![CDATA[https://t.example/p1.mp4]]></MediaFile>
+                    </MediaFiles>
+                  </Linear>
+                </Creative>
+              </Creatives>
+            </InLine>
+          </Ad>
+        </VAST>
+      </v:VASTAdData>
+    </v:AdSource>
+    <v:TrackingEvents>
+      <v:Tracking event="breakStart"><![CDATA[https://t.example/bs]]></v:Tracking>
+    </v:TrackingEvents>
+  </v:AdBreak>
+  <v:AdBreak timeOffset="00:10:00.000" breakType="linear" breakId="mid">
+    <v:AdSource id="mid-ad" allowMultipleAds="true" followRedirects="true">
+      <v:AdTagURI templateType="vast3"><![CDATA[https://t.example/midtag]]></v:AdTagURI>
+    </v:AdSource>
+  </v:AdBreak>
+  <v:AdBreak timeOffset="end" breakType="linear" breakId="post">
+    <v:AdSource id="post-ad">
+      <v:CustomAdData templateType="custom"><![CDATA[anything]]></v:CustomAdData>
+    </v:AdSource>
+  </v:AdBreak>
+</v:VMAP>

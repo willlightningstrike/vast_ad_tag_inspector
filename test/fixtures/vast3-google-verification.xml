@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="3.0">
+  <Ad id="g1">
+    <InLine>
+      <AdSystem>Example</AdSystem>
+      <AdTitle>VAST 3 with extension verification</AdTitle>
+      <Impression><![CDATA[https://t.example/g1-imp]]></Impression>
+      <Creatives>
+        <Creative id="c-g1">
+          <Linear>
+            <Duration>00:00:20</Duration>
+            <MediaFiles>
+              <MediaFile delivery="progressive" type="video/mp4" width="640" height="360"><![CDATA[https://t.example/g1.mp4]]></MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+      </Creatives>
+      <Extensions>
+        <Extension type="AdVerifications">
+          <AdVerifications>
+            <Verification vendor="doubleverify.com-omid">
+              <JavaScriptResource apiFramework="omid"><![CDATA[https://t.example/dv.js]]></JavaScriptResource>
+              <TrackingEvents>
+                <Tracking event="verificationNotExecuted"><![CDATA[https://t.example/dv-notexec]]></Tracking>
+              </TrackingEvents>
+            </Verification>
+          </AdVerifications>
+        </Extension>
+      </Extensions>
+    </InLine>
+  </Ad>
+</VAST>

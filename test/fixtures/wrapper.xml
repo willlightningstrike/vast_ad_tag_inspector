@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="3.0">
+  <Ad id="w1">
+    <Wrapper>
+      <AdSystem>Example</AdSystem>
+      <VASTAdTagURI><![CDATA[https://t.example/next]]></VASTAdTagURI>
+      <Impression><![CDATA[https://t.example/w1-imp]]></Impression>
+      <Error><![CDATA[https://t.example/w1-err]]></Error>
+    </Wrapper>
+  </Ad>
+</VAST>
